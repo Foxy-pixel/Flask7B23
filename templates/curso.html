@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursos</title>
+    <script src="https://js.pusher.com/7.2/pusher.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <!-- <link rel="stylesheet" href="cursostyle.css"> -->
+    <style>
+         body {
+            background-color: #f8d7da; /* Fondo rosa claro */
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            margin-top: 60px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #721c24; /* Rojo oscuro */
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-label {
+            font-weight: bold;
+            color: #721c24; /* Rojo oscuro */
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 1px solid #f5c6cb; /* Borde rosa */
+            padding: 10px;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            border-color: #f1b0b7; /* Borde rosa oscuro al hacer focus */
+            outline: none;
+        }
+
+        .btn {
+            background-color: #c82333; /* Botón rojo */
+            color: white;
+            border: none;
+            border-radius: 10px;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .btn:hover {
+            background-color: #a71d2a; /* Rojo más oscuro al hacer hover */
+        }
+
+        table {
+            margin-top: 30px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background-color: #c82333; /* Fondo rojo */
+            color: white;
+            padding: 15px;
+        }
+
+        td, th {
+            padding: 15px;
+            text-align: left;
+            border: 1px solid #f5c6cb; /* Borde rosa */
+        }
+
+        .btn-warning {
+            background-color: #ffc107; /* Botón amarillo */
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .btn-danger {
+            background-color: #dc3545; /* Botón rojo */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        #searchInput {
+            border-radius: 10px;
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb; /* Borde rosa */
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-6">
+                <h1>Inscripción de Curso</h1>
+                <small class="text-muted">Mario Antonio Mejia Valadez</small>
+                <form id="frmCurso" action="/curso" method="POST">
+                    <input type="hidden" id="id_curso" name="id_curso">
+                    <div class="mb-4">
+                        <label for="nombre_curso" class="form-label">Nombre del Curso</label>
+                        <input type="text" class="form-control" id="nombre_curso" name="nombre_curso" required minlength="5" maxlength="50">
+                    </div>
+                    <div class="mb-4">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono" required minlength="10" maxlength="15">
+                    </div>
+                    <button type="submit" class="btn" id="submitButton">Registrar Curso</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre del Curso</th>
+                            <th>Teléfono</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyLog"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#frmCurso").validate({
+                rules: {
+                    nombre_curso: {
+                        required: true,
+                        minlength: 5,
+                        maxlength: 50
+                    },
+                    telefono: {
+                        required: true,
+                        minlength: 10,
+                        maxlength: 15
+                    }
+                },
+                messages: {
+                    nombre_curso: {
+                        required: "Por favor, introduce el nombre del curso.",
+                        minlength: "El nombre del curso debe tener al menos 5 caracteres.",
+                        maxlength: "El nombre del curso no puede tener más de 50 caracteres."
+                    },
+                    telefono: {
+                        required: "Por favor, introduce el teléfono.",
+                        minlength: "El teléfono debe tener al menos 10 caracteres.",
+                        maxlength: "El teléfono no puede tener más de 15 caracteres."
+                    }
+                }
+            });
+
+            function buscar(term = "") {
+                $.get("/buscar", { q: term }, function (respuesta) {
+                    $("#tbodyLog").html("");
+
+                    for (var x in respuesta) {
+                        var registro = respuesta[x];
+                        $("#tbodyLog").append(`<tr>
+                            <td>${registro.Nombre_Curso}</td>
+                            <td>${registro.Telefono}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="editar(${registro.ID_Curso}, '${registro.Nombre_Curso}', '${registro.Telefono}')">Editar</button>
+                                <button class="btn btn-danger btn-sm" onclick="eliminar(${registro.ID_Curso})">Eliminar</button>
+                            </td>
+                        </tr>`);
+                    }
+                });
+            }
+
+            buscar();
+
+            $("#searchButton").click(function () {
+                var searchTerm = $("#searchInput").val().trim();
+                buscar(searchTerm);
+            });
+
+            window.eliminar = function (id) {
+                if (confirm("¿Estás seguro de que deseas eliminar este curso?")) {
+                    $.post("/eliminar_curso", { id: id }, function (result) {
+                        alert("Curso eliminado correctamente.");
+                        buscar();
+                    }).fail(function (err) {
+                        alert("Error al eliminar el registro.");
+                    });
+                }
+            };
+
+            window.editar = function (id, nombre_curso, telefono) {
+                $("#id_curso").val(id);
+                $("#nombre_curso").val(nombre_curso);
+                $("#telefono").val(telefono);
+                
+                $("#submitButton").text("Actualizar");
+            };
+
+            Pusher.logToConsole = true;
+            var pusher = new Pusher('ab077c6305428af0579b', {
+                cluster: 'mt1'
+            });
+
+            var channel = pusher.subscribe("registrosTiempoReal");
+            channel.bind("registroTiempoReal", function (mensaje) {
+                console.log("Mensaje recibido:", mensaje);
+                buscar();
+            });
+        });
+    </script>
+</body>
+
+</html>
